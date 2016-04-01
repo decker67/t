@@ -1,26 +1,45 @@
+let currentDeg  = new ReactiveVar(0), degreeStep = 0;
+
 Template.body.helpers({
-  doPulseClass: function () {
+  doPulseClass: () => {
     if (!refuelService.success.get()) {
       return 'pulse-animation';
     }
   },
 
-  fuelType: function () {
+  fuelType: () => {
     return refuelService.FUEL_TYPES;
   },
 
-  selected: function () {
+  selected: () => {
     return Session.get('selectedFuelType') === this.type ? 'selected' : '';
   },
 
-  refuelStation: function () {
+  refuelStation: () => {
+    degreeStep = 360 / refuelService.stations.get().length;
     return refuelService.stations.get();
+  },
+
+  rotation: () => {
+    return currentDeg.get();
+  },
+
+  gestures: {
+    'swipeleft .carousel': () => {
+      currentDeg.set(currentDeg.get() - degreeStep);
+    },
+    'swiperight .carousel': () => {
+      currentDeg.set(currentDeg.get() + degreeStep);
+    },
+    'tap .carousel': () => {
+
+    }
   }
 });
 
 Template.body.events({
-  'change #fuel': function (event) {
-    var refuelType = event.currentTarget.options[event.currentTarget.selectedIndex].value;
+  'change #fuel': (event) => {
+    const refuelType = event.currentTarget.options[event.currentTarget.selectedIndex].value;
     refuelService.requestRefuelStations(refuelType);
   }
 });

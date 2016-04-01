@@ -1,71 +1,75 @@
 
-RefuelService = function RefuelService() {
+RefuelService = ((log, navigator, meteor) => {
 
-  var _FUEL_TYPES = [
-    { type: 'diesel', name: 'Diesel' },
-    { type: 'e5', name: 'Super' },
-    { type: 'e10', name: 'Super E10' } ];
+  return () => {
 
-  var _lastLocation = {};
-  var _stations = new ReactiveVar([]);
-  var _success = new ReactiveVar(false);
+    const FUEL_TYPES = [
+      {type: 'diesel', name: 'Diesel'},
+      {type: 'e5', name: 'Super'},
+      {type: 'e10', name: 'Super E10'}
+    ];
 
-  return {
-    FUEL_TYPES: _FUEL_TYPES,
+    let lastLocation = {};
+    let stations = new ReactiveVar([]);
+    let success = new ReactiveVar(false);
 
-    lastLocation: _lastLocation,
-    stations: _stations,
-    success: _success,
+    return {
+      FUEL_TYPES,
+      lastLocation,
+      stations,
+      success,
+      requestRefuelStations
+    };
 
-    requestRefuelStations: _requestRefuelStations
+    function requestRefuelStations(refuelType = FUEL_TYPES[0].type) {
+      success.set(false);
+      requestAndProcessGeolocation(refuelType, doRequestRefuelStations);
+    }
+
+    function doRequestRefuelStations(refuelType, position) {
+      $.ajax({
+        url: "https://creativecommons.tankerkoenig.de/json/list.php",
+        jsonp: "callback",
+        dataType: "jsonp",
+        data: {
+          lat: position.latitude,
+          lng: position.longitude,
+          rad: 5, //radius in kilometres
+          sort: "price",
+          type: refuelType,
+          apikey: "b4d41299-ff10-cf71-7aa4-cdaae8356004"
+        },
+        success: data => {
+          //console.log('success', data);
+          success.set(true);
+          //console.log(data.stations);
+          data.stations.sort( (firstStation, secondStation) => {
+            var priceDifference = firstStation.price - secondStation.price;
+            return priceDifference === 0 ? firstStation.dist - secondStation.dist : priceDifference;
+          });
+          stations.set(data.stations);
+        }
+      });
+    }
+
+    function requestAndProcessGeolocation(refuelType, callback) {
+      navigator.geolocation.getCurrentPosition(position => {
+        lastLocation = position.coords;
+        meteor.setTimeout(() => {
+          requestAndProcessGeolocation(refuelType, callback);
+        }, 1000 * 60);
+        //console.log(lastLocation);
+        //get refuel stations
+        callback(refuelType, lastLocation);
+      }, error => {
+        log('error', error.code, error.message);
+      });
+    }
+
   };
 
-  function _requestRefuelStations(refuelType) {
-    _success.set(false);
-    _requestAndProcessGeolocation(refuelType, _doRequestRefuelStations);
-  }
+})(log, navigator, Meteor);
 
-  function _doRequestRefuelStations(refuelType, position) {
-    $.ajax({
-      url: "https://creativecommons.tankerkoenig.de/json/list.php",
-      jsonp: "callback",
-      dataType: "jsonp",
-      data: {
-        lat: position.latitude,
-        lng: position.longitude,
-        rad: 5, //radius in kilometres
-        sort: "price",
-        type: refuelType,
-        apikey: "b4d41299-ff10-cf71-7aa4-cdaae8356004"
-      },
-      success: function (data) {
-        //console.log('success', data);
-        _success.set(true);
-        //console.log(data.stations);
-        //todo: Ersparnis berechnen
-        data.stations.sort(function (firstStation, secondStation) {
-          var priceDifference = firstStation.price - secondStation.price;
-          return priceDifference === 0 ? firstStation.dist - secondStation.dist : priceDifference;
-        });
-        _stations.set(data.stations);
-      }
-    });
-  }
 
-  function _requestAndProcessGeolocation(refuelType, callback) {
-    navigator.geolocation.getCurrentPosition(function successCallback(position) {
-      _lastLocation = position.coords;
-      Meteor.setTimeout(function restartRequest() {
-        _requestAndProcessGeolocation(refuelType, callback);
-      }, 1000 * 60);
-      //console.log(lastLocation);
-      //get refuel stations
-      callback(refuelType, _lastLocation);
-    }, function errorCallback(error) {
-      console.log('error', error.code, error.message);
-    });
-  }
-
-}
 
 

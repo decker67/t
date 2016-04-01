@@ -1,10 +1,13 @@
 <template name="refuel">
-  <div id="price">{{price}}€</div>
-  <div id="where">{{brand}}, {{name}}</div>
-  <button>
-    <img class="navigate" src="/assets/images/route.svg" />
-    <a href="{{routeUrl}}">
-      {{dist}}km
-    </a>
-  </button>
+  <div class="item" style="transform: rotateY({{rotate index=index}}deg) translateZ(250px)">
+    <div class="price">{{station.price}}€</div>
+    <button>
+      <img class="navigate" src="/assets/images/route.svg" />
+      <a href="{{station.routeUrl}}">
+        {{station.dist}}km
+      </a>
+    </button>
+  </div>
 </template>
+
+<!--div class="where">{{station.brand}}, {{station.name}}</div-->
