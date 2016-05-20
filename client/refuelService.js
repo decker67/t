@@ -37,7 +37,7 @@ RefuelService = ((log, navigator, meteor) => {
           rad: 5, //radius in kilometres
           sort: "price",
           type: refuelType,
-          apikey: "b4d41299-ff10-cf71-7aa4-cdaae8356004"
+          apikey: "place for key from tankerkönig"
         },
         success: data => {
           //console.log('success', data);
